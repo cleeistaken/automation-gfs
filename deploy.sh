@@ -1,7 +1,7 @@
 #! /bin/bash
 
 TERRAFORM_DIR="terraform"
-ANSIBLE_SETUP_DIR="ansible-setup"
+ANSIBLE_SETUP_DIR="ansible"
 
 # Terraform
 echo "Deploying Virtual Machines"
