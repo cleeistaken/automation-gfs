@@ -1,0 +1,51 @@
+---
+- name: create gfs mount directory if it does not exist
+  ansible.builtin.file:
+    path: /mnt/gfs1
+    state: directory
+    mode: '0777'
+
+- name: Create a volume group on top of /dev/sdb
+  community.general.lvg:
+    vg: shared_vg1
+    pvs: /dev/sdb
+    vg_options: --shared
+  when: inventory_hostname == play_hosts[0]
+
+#- name: create vg
+#  ansible.builtin.command: "vgcreate --shared shared_vg1 /dev/sdb"
+#  register: result
+#  when: inventory_hostname == play_hosts[0]
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+  when: inventory_hostname == play_hosts[0]
+
+- name: start lock on vg
+  ansible.builtin.command: "vgchange --lock-start shared_vg1"
+  register: result
+  when: inventory_hostname != play_hosts[0]
+
+- name: output start lock on vg
+  ansible.builtin.debug:
+    var: result.stdout
+  when: inventory_hostname != play_hosts[0]
+
+- name: create a logical volume the size of all remaining space in the volume group
+  community.general.lvol:
+    vg: shared_vg1
+    lv: shared_lv1
+    opts: --activate sy
+    size: 100%FREE
+  when: inventory_hostname == play_hosts[0]
+
+- name: create a gfs2 filesystem
+  ansible.builtin.command: "mkfs.gfs2 -O -j8 -p lock_dlm -t pcscluster1:shared_vg1 /dev/shared_vg1/shared_lv1"
+  register: result
+  when: inventory_hostname == play_hosts[0]
+
+- name: output create gfs2
+  ansible.builtin.debug:
+    var: result.stdout
+  when: inventory_hostname == play_hosts[0]

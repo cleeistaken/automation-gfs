@@ -1,0 +1,7 @@
+---
+- name: Disable SELinux
+  ansible.posix.selinux:
+    state: disabled
+  notify:
+    - reboot_machine
+

@@ -1,0 +1,3 @@
+---
+os_create_hosts_file: True
+os_hosts_file: /etc/hosts

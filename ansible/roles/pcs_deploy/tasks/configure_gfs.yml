@@ -1,0 +1,61 @@
+---
+- name: create LVM-activate resource
+  #ansible.builtin.command: "pcs resource create sharedlv1 --group shared_vg1 ocf:heartbeat:LVM-activate lvname=shared_lv1 vgname=shared_vg1 activation_mode=shared vg_access_mode=lvmlockd op stop timeout=60s interval=0 op start timeout=60s interval=0"
+  ansible.builtin.command: "pcs resource create sharedlv1 --group shared_vg1 ocf:heartbeat:LVM-activate lvname=shared_lv1 vgname=shared_vg1 activation_mode=shared vg_access_mode=lvmlockd"
+  register: result
+
+- name: output create LVM-activate resource
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: clone vg resource
+  ansible.builtin.command: "pcs resource clone shared_vg1 interleave=true"
+  register: result
+
+- name: output clone vg resource
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: create pcs constraint order
+  ansible.builtin.command: "pcs constraint order start locking-clone then shared_vg1-clone"
+  register: result
+
+- name: output create pcs constraint order
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: create pcs constraint colocation
+  ansible.builtin.command: "pcs constraint colocation add shared_vg1-clone with locking-clone"
+  register: result
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: wait for volume to activate
+  pause:
+    seconds: 30
+
+- name: get logical volume status
+  ansible.builtin.command: lvs
+  register: result
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: get pcs status
+  ansible.builtin.command: "pcs status --full"
+  register: result
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: mount gfs volume
+  ansible.builtin.command: "pcs resource create sharedfs1 --group shared_vg1 ocf:heartbeat:Filesystem device=\"/dev/shared_vg1/shared_lv1\" directory=\"/mnt/gfs1\" fstype=\"gfs2\" options=noatime op monitor interval=10s on-fail=fence"
+  register: result
+
+- name: output mount gfs volume
+  ansible.builtin.debug:
+    var: result.stdout

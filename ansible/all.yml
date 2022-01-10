@@ -1,0 +1,84 @@
+---
+- name: Get IP
+  hosts: localhost
+  tasks:
+    - set_fact:
+        appliance_ip: "{{ ansible_default_ipv4.address }}"
+
+#- name: foo
+#  hosts: all
+#  tasks:
+#    - name: bar
+#      ansible.builtin.debug:
+#        var: hostvars
+
+#- name: foo
+#  hosts: localhost
+#  tasks:
+#    - name: bar
+#      ansible.builtin.debug:
+#        var: vars.vcenter
+
+#- name: bar
+#  hosts: all
+#  tasks:
+#    - name: get list of nodes and uuid
+#      set_fact:
+#        pcs_nodes="{{ groups['gfs_vm'] |map('extract', hostvars, 'fqdn') }}"
+#        pcs_uuid="{{ groups['gfs_vm'] |map('extract', hostvars, 'uuid') }}"
+#      when: inventory_hostname == play_hosts[0]
+#
+#    - name: build fqdn to uuid list
+#      set_fact:
+#        pcs_mappings="{{ pcs_mappings | default([])  }} + [ '{{ item[0] }}:{{ item[1] }}' ]"
+#      loop: "{{ pcs_nodes | zip(pcs_uuid) | list }}"
+#      when: inventory_hostname == play_hosts[0]
+#
+#    - name: build mapping
+#      set_fact:
+#        pcs_mappings="{{ pcs_mappings | join(';') }}"
+#      when: inventory_hostname == play_hosts[0]
+#
+#    - name: bar1
+#      ansible.builtin.debug:
+#        var: pcs_nodes
+#      when: inventory_hostname == play_hosts[0]
+#
+#    - name: bar2
+#      ansible.builtin.debug:
+#        var: pcs_uuid
+#      when: inventory_hostname == play_hosts[0]
+#
+#    - name: bar3
+#      ansible.builtin.debug:
+#        var: pcs_mappings
+#      when: inventory_hostname == play_hosts[0]
+
+- name: Common Configuration
+  hosts: all
+  roles:
+    - role: common
+
+- name: Repo Configuration
+  hosts: all
+  vars:
+    repo_ip: "{{ hostvars['localhost']['appliance_ip'] }}"
+  roles:
+    - role: repo
+      when: vars.local_repo|bool == true
+
+- name: Deploy PCS
+  hosts: all
+  vars:
+    dlm_rpm: "http://{{ hostvars['localhost']['appliance_ip'] }}/dlm/dlm-4.1.0-1.el8.x86_64.rpm"
+    hacluster_password: "{{ vars.hacluster_password }}"
+  roles:
+    - role: pcs_deploy
+      any_errors_fatal: true
+
+#- name: Configure PCS
+#  hosts: gfs_vm[0]
+#  vars:
+#    hacluster_password: "{{ vars.hacluster_password }}"
+#  roles:
+#    - role: pcs_configure

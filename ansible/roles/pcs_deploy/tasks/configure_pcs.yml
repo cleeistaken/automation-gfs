@@ -1,0 +1,143 @@
+---
+- name: get list of nodes
+  set_fact:
+    pcs_fqdn="{{ groups['gfs_vm'] |map('extract', hostvars, 'ansible_fqdn') |list }}"
+    pcs_uuid="{{ groups['gfs_vm'] |map('extract', hostvars, 'uuid') }}"
+
+- name: build fqdn to uuid list
+  set_fact:
+    pcs_mappings="{{ pcs_mappings | default([])  }} + [ '{{ item[0] }}:{{ item[1] }}' ]"
+  loop: "{{ pcs_fqdn | zip(pcs_uuid) | list }}"
+
+- name: build mapping string
+  set_fact:
+    pcs_mapping_string="{{ pcs_mappings | join(';') }}"
+
+- name: print mappings
+  ansible.builtin.debug:
+    var: pcs_mapping_string
+
+- name: authenticate pcs nodes
+  ansible.builtin.command: "pcs host -u hacluster -p vmware auth {{ pcs_fqdn | join(' ') }}"
+  register: result
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: get cluster status
+  ansible.builtin.command: "pcs cluster status"
+  register: result
+  failed_when: result.rc not in [ 0, 1 ]
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: cluster running?
+  set_fact:
+    cluster_running: "{{ not ('Error: cluster is not currently running on this node' in [result.stdout, result.stderr]) }}"
+
+- name: output
+  ansible.builtin.debug:
+    var: cluster_running
+
+- name: create and start cluster
+  ansible.builtin.command: "pcs cluster setup --start pcscluster1 {{ pcs_fqdn | join(' ') }}"
+  register: result
+  when: not cluster_running
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: enable the cluster to start automatically at boot
+  ansible.builtin.command: "pcs cluster enable --all"
+  register: result
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: get cluster status
+  ansible.builtin.command: "pcs cluster status"
+  register: result
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: check quorum
+  ansible.builtin.command: "corosync-quorumtool -s"
+  register: result
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: configure stonith
+  ansible.builtin.command: "pcs stonith create vmfence fence_vmware_rest pcmk_host_map=\"{{ pcs_mapping_string }}\" ipaddr={{ vars.vcenter.host }} ssl=1 login={{ vars.vcenter.username }} passwd={{ vars.vcenter.password }} ssl_insecure=1"
+  register: result
+
+- name: enable stonith
+  ansible.builtin.command: "pcs property set stonith-enabled=true"
+  register: result
+
+- name: show stonith config
+  ansible.builtin.command: "pcs stonith status"
+  register: result
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: set pcs property no-quorum
+  ansible.builtin.command: "pcs property set no-quorum-policy=freeze"
+  register: result
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: show stonith
+  ansible.builtin.command: "pcs stonith status"
+  register: result
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+#"pcs resource create dlm ocf:pacemaker:controld op monitor interval=30s on-fail=fence clone interleave=true ordered=true"
+- name: create controld
+  ansible.builtin.command: "pcs resource create dlm --group locking ocf:pacemaker:controld op monitor interval=30s on-fail=fence"
+  register: result
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: configure clone locking interleave
+  ansible.builtin.command: "pcs resource clone locking interleave=true"
+  register: result
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+
+# "pcs resource create lvmlockd ocf:heartbeat:lvmlockd op monitor interval=30s on-fail=fence clone interleave=true ordered=true"
+- name: create lvmlockd
+  ansible.builtin.command: "pcs resource create lvmlockd --group locking ocf:heartbeat:lvmlockd op monitor interval=30s on-fail=fence"
+  register: result
+
+- name: wait for lvmlockd to start
+  pause:
+    seconds: 30
+
+- name: get pcs status
+  ansible.builtin.command: "pcs status --full"
+  register: result
+
+- name: output
+  ansible.builtin.debug:
+    var: result.stdout
+

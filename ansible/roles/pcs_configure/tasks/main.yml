@@ -1,0 +1,63 @@
+---
+- name: get list of nodes
+  set_fact: pcs_nodes="{{ groups['gfs_vm'] |map('extract', hostvars, 'ansible_fqdn') |list }}"
+
+- name: list of nodes
+  ansible.builtin.debug:
+    var: pcs_nodes
+
+- name: command
+  ansible.builtin.debug:
+    msg: "pcs host -u hacluster -p vmware auth {{ pcs_nodes | join(' ') }}"
+
+- name: authenticate pcs nodes
+  ansible.builtin.command: "pcs host -u hacluster -p vmware auth {{ pcs_nodes | join(' ') }}"
+  register: result
+
+- name: authenticate pcs nodes
+  ansible.builtin.command: "pcs host -u hacluster -p vmware auth {{ pcs_nodes | join(' ') }}"
+  register: result
+
+- name: command
+  ansible.builtin.debug:
+    var: result
+
+- name: create and start cluster
+  ansible.builtin.command: "pcs cluster setup --start pcscluster1 {{ pcs_nodes | join(' ') }}"
+  register: result
+
+- name: command
+  ansible.builtin.debug:
+    var: result
+
+- name: start the cluster on all nodes
+  ansible.builtin.command: "pcs cluster start --all"
+  register: result
+
+- name: command
+  ansible.builtin.debug:
+    var: result
+
+- name: enable the cluster to start automatically at boot
+  ansible.builtin.command: "pcs cluster enable --all"
+  register: result
+
+- name: command
+  ansible.builtin.debug:
+    var: result
+
+- name: get cluster status
+  ansible.builtin.command: "pcs cluster status"
+  register: result
+
+- name: command
+  ansible.builtin.debug:
+    var: result
+
+- name: check quorum
+  ansible.builtin.command: "corosync-quorumtool -s"
+  register: result
+
+- name: command
+  ansible.builtin.debug:
+    var: result
