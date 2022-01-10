@@ -1,11 +1,9 @@
 #! /bin/bash
 
-TERRAFORM_DIR="1.terraform"
-ANSIBLE_SETUP_DIR="2.ansible-setup"
-ANSIBLE_GFS_DIR="3.ansible-gfs"
+TERRAFORM_DIR="terraform"
 
 # Terraform
 echo "Destroying Virtual Machines"
-pushd "$TERRAFORM_DIR"
-./destroy.sh
-popd
+pushd "$TERRAFORM_DIR" > /dev/null
+  ./destroy.sh
+popd > /dev/null
