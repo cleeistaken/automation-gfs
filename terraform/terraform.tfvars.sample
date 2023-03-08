@@ -1,0 +1,88 @@
+# vCenter configurations
+vcenter_server = "vc.vmware.home"
+vcenter_user = "administrator@vsphere.local"
+vcenter_password = "VMware1!"
+vcenter_insecure_ssl = true
+
+# vSphere configuration
+vsphere_datacenter = "Datacenter"
+vsphere_compute_cluster ="Cluster"
+vsphere_datastore_name = "vsanDatastore"
+vsphere_resource_pool_name = "gfs2-rp"
+vsphere_networks = [{name="wdc-vds01-vm-b", ovf_mapping="eth0"}, {name="wdc-vds01-vm-c", ovf_mapping="eth1"}]
+
+# Content library
+vsphere_content_library_name = "Automation Content Library"
+vsphere_content_library_description = "A new source of content."
+vsphere_content_library_item_name = "RHEL 8.5"
+vsphere_content_library_item_description = "Red Hat Enterprise Linux 8.5"
+vsphere_content_library_item_file_url = "http://%s/rhel-8.5-cloud-init.ova"
+
+# Cloud init
+#cloud_init_username = "vmware"
+#cloud_init_password = "P@ssword123!"
+#cloud_init_primary_group = "vmware"
+#cloud_init_groups = "wheel"
+#cloud_init_user_shell = "/bin/bash"
+
+# SSH
+#rsa_private_key_file = "~/.ssh/id_rsa"
+#rsa_public_key_file = "~/.ssh/id_rsa.pub"
+
+# VM
+vm_name_prefix = "gfs"
+#vm_firmware = "efi"
+vm_hardware_version = 19
+vm_count = 3
+vm_cpu_count = 4
+vm_mem_size_mb = 8192
+vm_disk_os_size_gb = 40
+vm_disk_data_count = 1
+vm_disk_data_size_gb = 200
+
+
+# VM Networking
+vm_network_ipv4_gateway = "172.16.21.253"
+vm_network_ipv4_dns_servers = ["172.16.16.16", "172.16.16.17"]
+vm_network_domain = "isvlab.vmware.com"
+vm_network_ipv4_ips = [
+  [
+    {ipv4_address="172.16.1.101",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.101",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.102",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.102",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.103",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.103",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.104",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.104",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.105",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.105",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.106",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.106",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.107",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.107",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.108",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.108",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.109",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.109",ipv4_netmask="24"}
+  ]
+]
+
+# Inventory
+output_folder = "../config"

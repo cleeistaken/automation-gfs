@@ -1,15 +1,11 @@
-## Confluent Platform Terraform for VMWare
-Deploy VMs into VSphere cluster for Confluent Platform
+# GFS2 on vSphere with vSAN
 
+This folder contains the Terraform code to create the required vSphere infrastructure
+and VM for the GFS2 automation.
 
-### Prerequisites
-* Terraform v0.12.24
+## Changes
 
-
-### Instructions
-
-Edit the `terraform.tfvars` file with the specifics for user/pass cluster name etc...
-
-Run `terraform plan` and check the output to validate what's going to happen
-
-Run `terraform apply` to create the resources. 
+### 2023/03/08
+* Major rework to simplify the code
+* Switch to cloud-init VM initialization
+* Convert local-ip script from bash to Python
