@@ -12,11 +12,6 @@
     vg_options: --shared
   when: inventory_hostname == play_hosts[0]
 
-#- name: create vg
-#  ansible.builtin.command: "vgcreate --shared shared_vg1 /dev/sdb"
-#  register: result
-#  when: inventory_hostname == play_hosts[0]
-
 - name: output
   ansible.builtin.debug:
     var: result.stdout

@@ -1,6 +1,5 @@
 ---
 - name: create LVM-activate resource
-  #ansible.builtin.command: "pcs resource create sharedlv1 --group shared_vg1 ocf:heartbeat:LVM-activate lvname=shared_lv1 vgname=shared_vg1 activation_mode=shared vg_access_mode=lvmlockd op stop timeout=60s interval=0 op start timeout=60s interval=0"
   ansible.builtin.command: "pcs resource create sharedlv1 --group shared_vg1 ocf:heartbeat:LVM-activate lvname=shared_lv1 vgname=shared_vg1 activation_mode=shared vg_access_mode=lvmlockd"
   register: result
 

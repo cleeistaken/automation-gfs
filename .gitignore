@@ -1,9 +1,8 @@
 #
 # GFS automation
 # 
-config/inventory.yml
-config/settings-template.yml
-config/terraform.tfvars
+inventory.yml
+terraform.tfvars
 
 # jetbrains
 .idea/*

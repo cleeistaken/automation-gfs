@@ -1,24 +1,46 @@
 ---
-- name: get list of nodes
-  set_fact:
-    pcs_fqdn="{{ groups['gfs_vm'] |map('extract', hostvars, 'ansible_fqdn') |list }}"
-    pcs_uuid="{{ groups['gfs_vm'] |map('extract', hostvars, 'uuid') }}"
+- name: Get node FQND and UUID
+  ansible.builtin.set_fact:
+    pcs_fqdn: "{{ groups['all'] |map('extract', hostvars, 'ansible_fqdn') |list }}"
+    pcs_uuid: "{{ groups['all'] |map('extract', hostvars, 'uuid') }}"
 
-- name: build fqdn to uuid list
-  set_fact:
-    pcs_mappings="{{ pcs_mappings | default([])  }} + [ '{{ item[0] }}:{{ item[1] }}' ]"
-  loop: "{{ pcs_fqdn | zip(pcs_uuid) | list }}"
+- name: Print FQDN mappings
+  ansible.builtin.debug:
+    var: pcs_fqdn
 
-- name: build mapping string
+- name: Print UUID mappings
+  ansible.builtin.debug:
+    var: pcs_uuid
+
+- name: Create empty pcs_mappings list
+  ansible.builtin.set_fact:
+    pcs_mappings: []
+
+- name: Print PCS mappings
+  ansible.builtin.debug:
+    var: pcs_mappings
+
+- name: Build FQDN/UUID list
+  ansible.builtin.set_fact:
+    pcs_mappings: "{{ pcs_mappings + [ [ item[0], item[1] ] | join(':') ] }}"
+  with_together:
+    - "{{ pcs_fqdn }}"
+    - "{{ pcs_uuid }}"
+
+- name: Print PCS mappings
+  ansible.builtin.debug:
+    var: pcs_mappings
+
+- name: Build mapping string
   set_fact:
     pcs_mapping_string="{{ pcs_mappings | join(';') }}"
 
-- name: print mappings
+- name: Print mapping string
   ansible.builtin.debug:
     var: pcs_mapping_string
 
 - name: authenticate pcs nodes
-  ansible.builtin.command: "pcs host -u hacluster -p vmware auth {{ pcs_fqdn | join(' ') }}"
+  ansible.builtin.command: "pcs host -u hacluster -p {{ hacluster_password }} auth {{ pcs_fqdn | join(' ') }}"
   register: result
 
 - name: output

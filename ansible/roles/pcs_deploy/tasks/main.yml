@@ -1,26 +1,30 @@
 ---
-#- name: initilize data disks
-#  vars:
-#    data_filesystem: xfs
-#    data_mount_opts: noatime
-#    data_mount_folder: /pcs_deploy
-#    data_mount_prefix: data
-#  include: initialize_data_disks.yml
+- name: Install LVM2
+  ansible.builtin.yum:
+    name: lvm2
+    state: latest
 
-- name: configure sysctl vm.dirty_background_ratio
+- name: Configure sysctl vm.dirty_background_ratio
   ansible.posix.sysctl:
      name: vm.dirty_background_ratio
      value: '20'
      state: present
 
-- name: configure sysctl vm.vfs_cache_pressure
+- name: Configure sysctl vm.vfs_cache_pressure
   ansible.posix.sysctl:
      name: vm.vfs_cache_pressure
      value: '500'
      state: present
 
+# https://access.redhat.com/solutions/6958415
+- name: Enable lvmlockd (https://access.redhat.com/solutions/6958415)
+  lineinfile:
+    dest: /etc/lvm/lvm.conf
+    regexp: '#\s*use_lvmlockd\s*=\s*\d+\s*$'
+    line: 'use_lvmlockd = 1'
+
 - name: install required packages
-  dnf:
+  ansible.builtin.yum:
     name:
       - dlm-lib
       - pcs
@@ -31,22 +35,31 @@
     state: present
 
 - name: install patched dlm
-  yum:
+  ansible.builtin.yum:
     name: "{{ dlm_rpm }}"
     validate_certs: no
     disable_gpg_check: yes
     state: present
 
 - name: set hacluster user password
-  user:
+  ansible.builtin.user:
     name: hacluster
-    password: "{{ 'vmware' | password_hash('sha512') }}"
+    group: haclient
+    password: "{{ hacluster_password | password_hash('bcrypt') }}"
 
 - name: start pcsd service
   ansible.builtin.service:
     name: pcsd
     state: started
     enabled: yes
+
+- name: Stop default cluster
+  ansible.builtin.command: "pcs cluster stop --force"
+  register: result
+
+- name: Destroy default cluster
+  ansible.builtin.command: "pcs cluster destroy"
+  register: result
 
 - name: configure pcs
   include: configure_pcs.yml
