@@ -1,0 +1,152 @@
+---
+- name: Wait for systems to boot up
+  hosts: all
+  gather_facts: no
+  any_errors_fatal: true
+  tasks:
+    - name: Wait up to 300 seconds
+      wait_for_connection:
+        delay: 3
+        sleep: 5
+        timeout: 300
+
+- name: Prapare systems
+  hosts: all
+  gather_facts: yes
+  become: yes
+  any_errors_fatal: true
+  handlers:
+    - name: reboot_machine
+      ansible.builtin.reboot:
+        reboot_timeout: 300
+  tasks:
+    - name: Fail on unexpected distributions
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == 'CentOS' or
+            ansible_distribution == 'RedHat'
+        fail_msg: "Unexpected distribution: {{ ansible_distribution }}"
+        success_msg: "Supported distribution"
+
+    - name: Fail on unexpected CentOS versions
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution_major_version | int == 8
+        fail_msg: "Unexpected distribution version: {{ ansible_distribution_major_version }}"
+        success_msg: "Supported distribution version"
+      when: ansible_distribution == 'CentOS'
+
+    - name: Fail on unexpected RedHat versions
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution_major_version | int == 8 or
+            ansible_distribution_major_version | int == 9
+        fail_msg: "Unexpected distribution version: {{ ansible_distribution_major_version }}"
+        success_msg: "Supported distribution version"
+      when: ansible_distribution == 'RedHat'
+
+    - name: Set OS variables
+      include_vars: "{{ item }}"
+      tags: always
+      with_first_found:
+        - "{{ ansible_distribution | lower }}-{{ ansible_distribution_version | lower }}.yml"
+        - "{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version | lower }}.yml"
+        - "{{ ansible_os_family | lower }}-{{ ansible_distribution_major_version | lower }}.yml"
+        - "{{ ansible_distribution | lower }}.yml"
+        - "{{ ansible_os_family | lower }}.yml"
+
+    - name: Stop and disable firewalld
+      ansible.builtin.systemd:
+        name: firewalld
+        state: stopped
+        enabled: false
+      when: ansible_distribution == 'CentOS' or
+            ansible_distribution == 'RedHat'
+
+    - name: Stop and disable UFW
+      community.general.ufw:
+        state: disabled
+      when: ansible_distribution == 'Debian' or
+            ansible_distribution == 'Ubuntu'
+
+    - name: Update hosts file with system IP
+      lineinfile: dest="{{ os_hosts_file }}"
+        state=present
+        dest="{{ os_hosts_file }}"
+        regexp='.*{{ item }}$' line="{{ \"%-13s\" | format(hostvars[item].ansible_default_ipv4.address) }}\t{{ hostvars[item].ansible_fqdn }} {{ hostvars[item].ansible_hostname }}"
+      when: hostvars[item].ansible_default_ipv4.address is defined
+      with_items: "{{ groups['all'] }}"
+
+    - name: Install required SELINUX packages for Ubuntu
+      ansible.builtin.apt:
+        name:
+          - python3-selinux
+          - selinux-policy-default
+        state: present
+      register: apt_action
+      delay: 5
+      retries: 60
+      until: apt_action is success or ('Failed to lock apt for exclusive operation' not in apt_action.msg and '/var/lib/dpkg/lock' not in apt_action.msg)
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Disable SELinux
+      ansible.posix.selinux:
+        state: disabled
+      notify:
+        - reboot_machine
+
+    - name: Force all notified handlers to run at this point, not waiting for normal sync points
+      ansible.builtin.meta: flush_handlers
+
+- name: Red Hat system registration
+  hosts: all
+  any_errors_fatal: true
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: Fetch selected facts
+      ansible.builtin.setup:
+        filter:
+          - 'ansible_distribution'
+          - 'ansible_distribution_major_version'
+
+    - name: Unregister system
+      redhat_subscription:
+        state: absent
+      when: ansible_distribution == 'RedHat'
+
+    - name: Register with activationkey and consume subscriptions
+      redhat_subscription:
+        state: present
+        # force_register: yes
+        activationkey: automation-gfs
+        org_id: 16794691
+        pool_ids:
+          - 2c94cfaa86a4481c0186a8746290199f
+      when: ansible_distribution == 'RedHat'
+
+    - name: Enable RedHat HA repository for RHEL 8
+      community.general.rhsm_repository:
+        name:
+          - rhel-8-for-x86_64-highavailability-rpms
+          - rhel-8-for-x86_64-resilientstorage-rpms
+      when: ansible_distribution == 'RedHat' and ansible_distribution_major_version | int == 8
+
+    - name: Enable RedHat Resilient Storage repository for RHEL 9
+      community.general.rhsm_repository:
+        name: rhel-9-for-x86_64-resilientstorage-rpms
+      when: ansible_distribution == 'RedHat' and ansible_distribution_major_version | int == 9
+
+    - debug:
+        var: ansible_distribution_major_version
+
+- name: Deploy PCS
+  hosts: all
+  become: yes
+  any_errors_fatal: true
+  vars:
+    dlm_rpm: "http://{{ local_ip }}/files/dlm-4.1.0-1.el8.x86_64.rpm"
+    hacluster_password: vmware
+  roles:
+    - role: pcs_deploy
+

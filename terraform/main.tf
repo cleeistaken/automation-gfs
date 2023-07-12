@@ -21,6 +21,13 @@ provider "vsphere" {
 }
 
 #
+# Get Local IP
+#
+data "external" "local_ip" {
+  program = ["python3", "-c", "import json; import netifaces as ni; iface = [interface for interface in ni.interfaces() if interface.startswith(('ens', 'eth0'))][0]; print(json.dumps({'ip': ni.ifaddresses(iface)[ni.AF_INET][0]['addr']}))"]
+}
+
+#
 #  htpasswd provider
 #  https://registry.terraform.io/providers/loafoe/htpasswd/latest/docs
 #
@@ -41,12 +48,6 @@ resource "htpasswd_password" "cloud_init_password_hash" {
   salt = random_password.salt.result
 }
 
-#
-# Get Local IP
-#
-data "external" "local_ip" {
-  program = ["python3", "local-ip.py"]
-}
 
 #
 # vSphere
@@ -90,8 +91,7 @@ resource "vsphere_content_library_item" "my_content_library_item" {
   name        = var.vsphere_content_library_item_name
   description = var.vsphere_content_library_item_description
   library_id  = vsphere_content_library.my_content_library.id
-  #file_url    = var.vsphere_content_library_item_file_url
-  file_url    = format(var.vsphere_content_library_item_file_url, data.external.local_ip.result.ip)
+  file_url    = format("http://%s/%s", data.external.local_ip.result.ip, var.vsphere_content_library_item_file_url)
 }
 
 #
@@ -320,30 +320,3 @@ resource "vsphere_compute_cluster_vm_anti_affinity_rule" "gfs_vm_anti_affinity_r
   virtual_machine_ids = concat(vsphere_virtual_machine.gfs_vm_primary.*.id, vsphere_virtual_machine.gfs_vm_secondary.*.id)
 }
 
-resource "local_file" "inventory" {
-  content  = templatefile("inventory.yml.tpl", {
-
-    # VMS
-    vms_primary = vsphere_virtual_machine.gfs_vm_primary
-    vms_secondary = vsphere_virtual_machine.gfs_vm_secondary
-
-    # VM credentials
-    vm_user = var.cloud_init_username
-    vm_ssh_private_key_file = var.rsa_private_key_file
-
-    # vCenter
-    vcenter_server = var.vcenter_server
-    vcenter_user = var.vcenter_user
-    vcenter_password = var.vcenter_password
-    vcenter_allow_unverified_ssl = var.vcenter_insecure_ssl
-
-    # vSphere
-    vsphere_datacenter = var.vsphere_datacenter
-    vsphere_cluster = var.vsphere_compute_cluster
-
-    vm_disk_data_count = var.vm_disk_data_count
-
-  })
-  filename = "${var.output_folder}/inventory.yml"
-  file_permission = "644"
-}

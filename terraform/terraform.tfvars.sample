@@ -1,22 +1,27 @@
 # vCenter configurations
-vcenter_server = "vc.vmware.home"
+vcenter_server = "vc.home.lab"
 vcenter_user = "administrator@vsphere.local"
-vcenter_password = "VMware1!"
+vcenter_password = "P@ssword123!"
 vcenter_insecure_ssl = true
 
 # vSphere configuration
 vsphere_datacenter = "Datacenter"
 vsphere_compute_cluster ="Cluster"
 vsphere_datastore_name = "vsanDatastore"
-vsphere_resource_pool_name = "gfs2-rp"
-vsphere_networks = [{name="wdc-vds01-vm-b", ovf_mapping="eth0"}, {name="wdc-vds01-vm-c", ovf_mapping="eth1"}]
+vsphere_resource_pool_name = "kakfa"
+vsphere_networks = [{name="pg1", ovf_mapping="eth0"}, {name="pg2", ovf_mapping="eth1"}]
 
 # Content library
 vsphere_content_library_name = "Automation Content Library"
 vsphere_content_library_description = "A new source of content."
-vsphere_content_library_item_name = "RHEL 8.5"
-vsphere_content_library_item_description = "Red Hat Enterprise Linux 8.5"
-vsphere_content_library_item_file_url = "http://%s/rhel-8.5-cloud-init.ova"
+
+#vsphere_content_library_item_name = "RHEL 8.7"
+#vsphere_content_library_item_description = "Red Hat Enterprise Linux 8.7 Cloud Init"
+#vsphere_content_library_item_file_url =  "ova/rhel-8.7-cloud-init.ova"
+
+vsphere_content_library_item_name = "RHEL 9.2"
+vsphere_content_library_item_description = "Red Hat Enterprise Linux 9.2 Cloud Init"
+vsphere_content_library_item_file_url =  "ova/rhel-9.2-cloud-init.ova"
 
 # Cloud init
 #cloud_init_username = "vmware"
@@ -34,53 +39,88 @@ vm_name_prefix = "gfs"
 #vm_firmware = "efi"
 vm_hardware_version = 19
 vm_count = 3
-vm_cpu_count = 4
-vm_mem_size_mb = 8192
-vm_disk_os_size_gb = 40
+vm_cpu_count = 8
+vm_mem_size_mb = 16384
+vm_disk_os_size_gb = 60
 vm_disk_data_count = 1
-vm_disk_data_size_gb = 200
-
+vm_disk_data_size_gb = 1024
 
 # VM Networking
-vm_network_ipv4_gateway = "172.16.21.253"
-vm_network_ipv4_dns_servers = ["172.16.16.16", "172.16.16.17"]
-vm_network_domain = "isvlab.vmware.com"
+vm_network_ipv4_gateway = "172.16.1.1"
+vm_network_ipv4_dns_servers = ["8.8.8.8", "8.8.4.4"]
+vm_network_domain = "home.lab"
 vm_network_ipv4_ips = [
   [
-    {ipv4_address="172.16.1.101",ipv4_netmask="24"},
-    {ipv4_address="192.168.1.101",ipv4_netmask="24"}
+    {ipv4_address="172.16.1.201",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.201",ipv4_netmask="24"}
   ],
   [
-    {ipv4_address="172.16.1.102",ipv4_netmask="24"},
-    {ipv4_address="192.168.1.102",ipv4_netmask="24"}
+    {ipv4_address="172.16.1.202",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.202",ipv4_netmask="24"}
   ],
   [
-    {ipv4_address="172.16.1.103",ipv4_netmask="24"},
-    {ipv4_address="192.168.1.103",ipv4_netmask="24"}
+    {ipv4_address="172.16.1.203",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.203",ipv4_netmask="24"}
   ],
   [
-    {ipv4_address="172.16.1.104",ipv4_netmask="24"},
-    {ipv4_address="192.168.1.104",ipv4_netmask="24"}
+    {ipv4_address="172.16.1.204",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.204",ipv4_netmask="24"}
   ],
   [
-    {ipv4_address="172.16.1.105",ipv4_netmask="24"},
-    {ipv4_address="192.168.1.105",ipv4_netmask="24"}
+    {ipv4_address="172.16.1.205",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.205",ipv4_netmask="24"}
   ],
   [
-    {ipv4_address="172.16.1.106",ipv4_netmask="24"},
-    {ipv4_address="192.168.1.106",ipv4_netmask="24"}
+    {ipv4_address="172.16.1.206",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.206",ipv4_netmask="24"}
   ],
   [
-    {ipv4_address="172.16.1.107",ipv4_netmask="24"},
-    {ipv4_address="192.168.1.107",ipv4_netmask="24"}
+    {ipv4_address="172.16.1.207",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.207",ipv4_netmask="24"}
   ],
   [
-    {ipv4_address="172.16.1.108",ipv4_netmask="24"},
-    {ipv4_address="192.168.1.108",ipv4_netmask="24"}
+    {ipv4_address="172.16.1.208",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.208",ipv4_netmask="24"}
   ],
   [
-    {ipv4_address="172.16.1.109",ipv4_netmask="24"},
-    {ipv4_address="192.168.1.109",ipv4_netmask="24"}
+    {ipv4_address="172.16.1.209",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.209",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.210",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.210",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.211",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.211",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.212",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.212",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.213",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.213",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.214",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.214",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.215",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.215",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.216",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.216",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.217",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.217",ipv4_netmask="24"}
+  ],
+  [
+    {ipv4_address="172.16.1.218",ipv4_netmask="24"},
+    {ipv4_address="192.168.1.218",ipv4_netmask="24"}
   ]
 ]
 

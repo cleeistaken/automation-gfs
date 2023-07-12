@@ -1,10 +1,9 @@
-# cloud-config
+#cloud-config
 # https://cloudinit.readthedocs.io/en/latest/topics/modules.html
-#
-# Note: The default user is required for cloud-final.
-# Ref. https://serverfault.com/questions/804304/cloud-init-fails-on-ssh-authkey-fingerprints-module
-#
-ssh_pwauth: true
+
+groups:
+  - ${groups}
+
 users:
   - default
   - name: ${username}
@@ -16,4 +15,6 @@ users:
     lock_passwd: false
     passwd: ${password}
     ssh_authorized_keys:
-      ${ssh_key_list}
+    - ${ssh_key_list}
+
+ssh_pwauth: true
